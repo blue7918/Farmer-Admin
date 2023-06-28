@@ -9,7 +9,6 @@ import { accountList, accountData } from 'src/apis/admin/account';
 const AccountBody = () => {
   const [modalOpen, setModalOpen] = useState<number>(0);
   const [fieldName, setFieldName] = useState<string>('username');
-  const [pageNum, setPageNumber] = useState<number>(0);
   const [data, setData] = useState<string>('');
   const openModal = () => {
     setModalOpen(2);
