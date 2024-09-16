@@ -2,13 +2,59 @@ import React, { useState } from 'react';
 import Styled from '../styles';
 import FormButton from '@components/Register/FormButton';
 import { ErrorText } from 'src/types/login/types';
+import theme from '@styles/theme';
+import { postLogin } from 'src/apis/login/login';
+import { useRouter } from 'next/router';
+import { useDispatch } from 'react-redux';
+import { setUser } from 'store/reducers/userSlice';
+import { setCookie } from 'src/utils/cookie';
+// import { setToken } from 'store/reducers/tokenSlice';
+import { setToken } from 'src/utils/token/token';
 
 const InputGroup = () => {
+  const router = useRouter();
+  const dispatch = useDispatch();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorText, setErrorText] = useState('');
 
-  const handleLogin = () => {
+  // input actions
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+  };
+
+  // 로그인 성공시 API
+  const handleLoginSuccess = async () => {
+    try {
+      const res = await postLogin({ email, password });
+      const userData = res.data;
+      const userInfo = {
+        socialId: userData.socialId,
+        email: userData.email,
+        nickname: userData.nickname,
+        point: userData.point,
+        grade: userData.grade,
+        role: userData.role,
+        cumulativeAmount: userData.cumulativeAmount,
+        memberCoupon: userData.memberCoupon,
+      };
+      dispatch(setUser(userInfo));
+      // dispatch(setToken(userData.accessToken));
+      setToken(userData.accessToken);
+      setCookie('refreshToken', userData.refreshToken);
+      router.push('/');
+    } catch (err) {
+      setErrorText(err.response.data);
+    }
+  };
+
+  // 로그인 버튼 클릭시
+  const handleLogin = async () => {
     // 에러 분기처리
     // 이메일 & 패스워드 둘 다 or 이메일 입력되지 않은 경우
     if ((!email && !password) || !email) {
@@ -18,26 +64,16 @@ const InputGroup = () => {
     else if (email && !password) {
       setErrorText(ErrorText.PasswordRequired);
     } else {
-      // (값 모두 입력시)
-      console.log('로그인 API');
+      handleLoginSuccess();
     }
-    // 여기에서 회원정보 일치 여부를 체크하는 로직 작성
-    // 이 부분은 로그인 API 나오면 구체적으로 구현(error 처리 등등..)
-
-    // (/* 회원정보가 일치하지 않는 경우 catch */) {
-    //   setError(ErrorText.LoginFailed);
-    // }
-    // 일치하는 경우 => home으로 navigate
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-  };
-
+  //엔터키 눌렀을 시
+  const activeEnter = (e:React.KeyboardEvent<HTMLInputElement>) => {
+    if(e.key === "Enter") {
+      handleLogin();
+    }
+  }
   return (
     <>
       <Styled.InputWrapper>
@@ -50,11 +86,13 @@ const InputGroup = () => {
           type="password"
           placeholder="비밀번호"
           onChange={handlePasswordChange}
+          onKeyDown={(e)=>activeEnter(e)}
         />
         <Styled.ErrorText>{errorText}</Styled.ErrorText>
         <FormButton
           label="로그인"
-          backgroundColor="#D9D9D9"
+          color={theme.colors.white}
+          backgroundColor={theme.colors.loginGreen}
           onClick={handleLogin}
         />
       </Styled.InputWrapper>

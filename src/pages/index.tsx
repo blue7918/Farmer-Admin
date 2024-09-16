@@ -1,24 +1,61 @@
-import Head from 'next/head';
-import Header from '@components/Home/Header';
-import Banner from '@components/Home/Banner';
-import Category from '@components/Home/Category';
-import ShopPrev from '@components/Home/ShopPrev';
+import Slider from '@components/Home/Slider';
+import Category from '@components/Common/Category';
+import ShopPrev from '@components/Home/ShopBySize';
 import BestPlant from '@components/Home/BestPlant';
 import BestReview from '@components/Home/BestReview';
 import News from '@components/Home/News';
-import Footer from '@components/Home/Footer';
+import Layout from './layout';
+import { ReactElement } from 'react';
+import type { InferGetServerSidePropsType, GetServerSideProps } from 'next';
+import {
+  getMainBanner,
+  getBestProduct,
+  getBestReview,
+  getNews,
+} from 'src/apis/home/home';
+import { IndexPageProps } from 'src/types/home/types';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
-const IndexPage = () => (
-  <>
-    <Header />
-    <Banner />
-    <Category />
-    <ShopPrev />
-    <BestPlant />
-    <BestReview />
-    <News />
-    <Footer />
-  </>
-);
+const IndexPage = ({
+  banner,
+  bestPlant,
+  bestReview,
+  news,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (router.query.alert) {
+      alert(router.query.alert);
+      router.push(router.pathname);
+    }
+  }, [router]);
+
+  return (
+    <>
+      <Slider banner={banner} />
+      <Category />
+      <ShopPrev />
+      <BestPlant bestPlant={bestPlant} />
+      <BestReview bestReview={bestReview} />
+      <News news={news} />
+    </>
+  );
+};
+
+IndexPage.getLayout = (page: ReactElement) => {
+  return <Layout>{page}</Layout>;
+};
+
+export const getServerSideProps: GetServerSideProps<
+  IndexPageProps
+> = async () => {
+  const banner = await getMainBanner();
+  const bestPlant = await getBestProduct();
+  const bestReview = await getBestReview();
+  const news = await getNews();
+  return { props: { banner, bestPlant, bestReview, news } };
+};
 
 export default IndexPage;
